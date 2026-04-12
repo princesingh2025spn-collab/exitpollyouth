@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Youth Exit Poll</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin: 0;
+      background: #f2f2f2;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 400px;
+      border-radius: 10px;
+    }
+
+    input, select, button {
+      width: 90%;
+      padding: 10px;
+      margin: 10px;
+    }
+
+    .party {
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      margin: 5px;
+    }
+
+    .party img {
+      width: 30px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card" id="intro">
+
+  <h2>🗳 Youth Exit Poll</h2>
+
+  <!-- 📝 NOTE SECTION -->
+  <div style="background:#fff3cd; padding:10px; border-radius:8px; margin-bottom:15px;">
+    <b>⚠️ Note:</b>
+    <p id="noteText">
+      युथ एक्सिट पोल का भारत सरकार, चुनाव आयोग या किसी भी राज्य सरकार से कोई संबंध नहीं है।
+      
+    </p>
+  </div>
+
+  <p>Vote dene ke liye mobile number daale</p>
+
+  <input type="text" id="phone" placeholder="Mobile Number">
+
+  <button onclick="enter()">Continue</button>
+
+</div>
+
+<div class="card" id="voteSection" style="display:none;">
+
+  <h3>Select Party</h3>
+
+  <div class="party">
+    <input type="radio" name="party" value="SP">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Cycle_symbol.svg">
+    SP
+  </div>
+
+  <div class="party">
+    <input type="radio" name="party" value="BJP">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/BJP_Logo.svg">
+    BJP
+  </div>
+
+  <div class="party">
+    <input type="radio" name="party" value="CONGRESS">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/Indian_National_Congress_hand_logo.svg">
+    CONGRESS
+  </div>
+
+  <div class="party">
+    <input type="radio" name="party" value="BSP">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/0/02/Elephant_symbol.svg">
+    BSP
+  </div>
+
+  <div class="party">
+    <input type="radio" name="party" value="OTHERS"> OTHERS
+  </div>
+
+  <h3>Gender</h3>
+  <select id="gender">
+    <option>Male</option>
+    <option>Female</option>
+  </select>
+
+  <h3>Age</h3>
+  <select id="age">
+    <option>18-30</option>
+    <option>30-50</option>
+    <option>50-60</option>
+  </select>
+
+  <button onclick="submitVote()">Submit Vote</button>
+
+  <h3>📊 Live Result</h3>
+  <canvas id="chart"></canvas>
+
+</div>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBE93JUXeVPwWYmBV8R8hDfOu6iEonvzuQ",
+  authDomain: "first-time-7ca0f.firebaseapp.com",
+  projectId: "first-time-7ca0f",
+  storageBucket: "first-time-7ca0f.firebasestorage.app",
+  messagingSenderId: "770041666893",
+  appId: "1:770041666893:web:d89380c54aea7143cb6b04",
+  measurementId: "G-5PZTG17JW2"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let userPhone = "";
+let chart;
+
+// enter
+function enter(){
+  userPhone = document.getElementById("phone").value;
+
+  if(localStorage.getItem("voted")){
+    alert("Already voted ❌");
+    return;
+  }
+
+  document.getElementById("intro").style.display="none";
+  document.getElementById("voteSection").style.display="block";
+}
+
+// vote
+function submitVote(){
+  let party = document.querySelector('input[name="party"]:checked');
+  let gender = document.getElementById("gender").value;
+  let age = document.getElementById("age").value;
+
+  if(!party){
+    alert("Select party");
+    return;
+  }
+
+  db.collection("votes").doc(userPhone).get().then(doc=>{
+    if(doc.exists){
+      alert("Already voted ❌");
+    } else {
+      db.collection("votes").doc(userPhone).set({
+        party: party.value,
+        gender: gender,
+        age: age
+      });
+
+      localStorage.setItem("voted","yes");
+      alert("Vote Submitted ✅");
+    }
+  });
+}
+
+// chart
+function loadChart(){
+  db.collection("votes").onSnapshot(snapshot=>{
+
+    let count = {SP:0,BJP:0,CONGRESS:0,BSP:0,OTHERS:0};
+
+    snapshot.forEach(doc=>{
+      let p = doc.data().party;
+      if(count[p] !== undefined) count[p]++;
+      else count.OTHERS++;
+    });
+
+    let data = [
+      count.SP,count.BJP,count.CONGRESS,count.BSP,count.OTHERS
+    ];
+
+    let ctx = document.getElementById("chart");
+
+    if(chart){
+      chart.data.datasets[0].data = data;
+      chart.update();
+    } else {
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels:["SP","BJP","CONGRESS","BSP","OTHERS"],
+          datasets:[{
+            label:"Votes",
+            data:data,
+            backgroundColor:["green","orange","blue","purple","gray"]
+          }]
+        }
+      });
+    }
+  });
+}
+
+loadChart();
+</script>
+
+</body>
+</html>
