@@ -180,41 +180,67 @@ function submitVote(){
 }
 
 // chart
+let 
+
 function loadChart(){
   db.collection("votes").onSnapshot(snapshot=>{
 
-    let count = {SP:0,BJP:0,CONGRESS:0,BSP:0,OTHERS:0};
+    let counts = {
+      SP: 0,
+      BJP: 0,
+      CONGRESS: 0,
+      BSP: 0,
+      OTHERS: 0
+    };
 
     snapshot.forEach(doc=>{
-      let p = doc.data().party;
-      if(count[p] !== undefined) count[p]++;
-      else count.OTHERS++;
+      let data = doc.data();
+
+      if(data.party === "SP") counts.SP++;
+      else if(data.party === "BJP") counts.BJP++;
+      else if(data.party === "CONGRESS") counts.CONGRESS++;
+      else if(data.party === "BSP") counts.BSP++;
+      else counts.OTHERS++;
     });
 
-    let data = [
-      count.SP,count.BJP,count.CONGRESS,count.BSP,count.OTHERS
+    let dataArray = [
+      counts.SP,
+      counts.BJP,
+      counts.CONGRESS,
+      counts.BSP,
+      counts.OTHERS
     ];
 
-    let ctx = document.getElementById("chart");
+    let ctx = document.getElementById("myChart").getContext("2d");
 
+    // 🔥 FIX: agar chart hai to update karo, destroy nahi
     if(chart){
-      chart.data.datasets[0].data = data;
+      chart.data.datasets[0].data = dataArray;
       chart.update();
     } else {
       chart = new Chart(ctx, {
         type: "bar",
         data: {
-          labels:["SP","BJP","CONGRESS","BSP","OTHERS"],
-          datasets:[{
-            label:"Votes",
-            data:data,
-            backgroundColor:["green","orange","blue","purple","gray"]
+          labels: ["SP","BJP","CONGRESS","BSP","OTHERS"],
+          datasets: [{
+            label: "Votes",
+            data: dataArray,
+            backgroundColor: [
+              "green","orange","blue","purple","gray"
+            ]
           }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
         }
       });
     }
+
   });
 }
+
+loadChart();
 
 loadChart();
 </script>
