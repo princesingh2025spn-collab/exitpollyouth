@@ -11,6 +11,19 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
+
+#results {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+#results li {
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
+  font-size: 16px;
+}
+
     body {
       font-family: Arial;
       text-align: center;
@@ -73,29 +86,25 @@
 
   <h3>Select Party</h3>
 
-  <div class="party">
-    <input type="radio" name="party" value="SP">
-    
-  </div>
+<label class="party">
+<input type="radio" name="party" value="SP"> <span>SP</span>
+</label>
 
-  <div class="party">
-    <input type="radio" name="party" value="BJP">
-    
-  </div>
+<label class="party">
+<input type="radio" name="party" value="BJP"> <span>BJP</span>
+</label>
 
-  <div class="party">
-    <input type="radio" name="party" value="CONGRESS">
-    
-  </div>
+<label class="party">
+<input type="radio" name="party" value="CONGRESS"> <span>CONGRESS</span>
+</label>
 
-  <div class="party">
-    <input type="radio" name="party" value="BSP">
-    
-  </div>
+<label class="party">
+ <input type="radio" name="party" value="BSP"> <span>BSP</span>
+</label>
 
-  <div class="party">
-    <input type="radio" name="party" value="OTHERS"> OTHERS
-  </div>
+<label class="party">
+<input type="radio" name="party" value="OTHERS"> <span>OTHERS</span>
+</label>
 
   <h3>Gender</h3>
   <select id="gender">
@@ -110,12 +119,18 @@
     <option>50-60</option>
   </select>
 
-  <button onclick="submitVote()">Submit Vote</button>
+  <br><br>
+  <button onclick="submitVote()">Submit</button>
+</div>
 
-  <h3>📊 Live Result</h3>
+  
+<h3>📊 Live Result</h3>
+
+<ul id="results"></ul>
+
+<div style="height:250px;">
   <canvas id="chart"></canvas>
 
-</div>
 
 <script>
 
@@ -175,41 +190,49 @@ function submitVote(){
   });
 }
 
-// chart
-let
+
+
 
 function loadChart(){
   db.collection("votes").onSnapshot(snapshot=>{
 
-    let counts = {
-      SP: 0,
-      BJP: 0,
-      CONGRESS: 0,
-      BSP: 0,
-      OTHERS: 0
+    let count = {
+      SP:0,
+      BJP:0,
+      CONGRESS:0,
+      BSP:0,
+      OTHERS:0
     };
 
     snapshot.forEach(doc=>{
       let data = doc.data();
+      let p = data.party;
 
-      if(data.party === "SP") counts.SP++;
-      else if(data.party === "BJP") counts.BJP++;
-      else if(data.party === "CONGRESS") counts.CONGRESS++;
-      else if(data.party === "BSP") counts.BSP++;
-      else counts.OTHERS++;
+      if(count[p] !== undefined){
+        count[p]++;
+      } else {
+        count.OTHERS++;
+      }
     });
 
+    // 🔥 TEXT RESULT
+    let resultHTML = "";
+    for(let party in count){
+      resultHTML += `<li>${party} : ${count[party]} votes</li>`;
+    }
+
+    document.getElementById("results").innerHTML = resultHTML;
+
+    // 🔥 GRAPH DATA
     let dataArray = [
-      counts.SP,
-      counts.BJP,
-      counts.CONGRESS,
-      counts.BSP,
-      counts.OTHERS
+      count.SP,
+      count.BJP,
+      count.CONGRESS,
+      count.BSP,
+      count.OTHERS
     ];
 
-    let ctx = document.getElementById("myChart").getContext("2d");
-
-    // 🔥 FIX: agar chart hai to update karo, destroy nahi
+    let ctx = document.getElementById("chart").getContext("2d");
     if(chart){
       chart.data.datasets[0].data = dataArray;
       chart.update();
@@ -220,10 +243,7 @@ function loadChart(){
           labels: ["SP","BJP","CONGRESS","BSP","OTHERS"],
           datasets: [{
             label: "Votes",
-            data: dataArray,
-            backgroundColor: [
-              "green","orange","blue","purple","gray"
-            ]
+            data: dataArray
           }]
         },
         options: {
@@ -237,6 +257,8 @@ function loadChart(){
 }
 
 loadChart();
+
+
 </script>
 
 </body>
